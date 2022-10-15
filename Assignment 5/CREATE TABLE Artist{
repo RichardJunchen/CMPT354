@@ -1,0 +1,102 @@
+CREATE TABLE Artist(
+	artistname varchar(30) NOT NULL,
+	startdate date NOT NULL,
+	members INTEGER,
+	genre varchar(30),
+	PRIMARY KEY(artistname)
+);
+
+
+CREATE TABLE Musician(
+	msin char(5) NOT NULL,
+	firstname varchar(30),
+	lastname varchar(30) NOT NULL,
+	birthdate date,
+	PRIMARY KEY(msin)
+);
+
+CREATE TABLE Plays(
+	artistname varchar(30) NOT NULL,
+	msin char(5) NOT NULL,
+	share decimal(18,3),
+	PRIMARY KEY (artistname,msin),
+	FOREIGN KEY(artistname) REFERENCES Artist(artistname) ON DELETE NO ACTION ON UPDATE CASCADE,
+	FOREIGN KEY(msin) REFERENCES Musician(msin) ON UPDATE NO ACTION ON DELETE CASCADE
+);
+
+CREATE TABLE Song(
+	isrc char(14) NOT NULL,
+	title varchar(30),
+	songyear Integer,
+	artistname varchar(30),
+	PRIMARY KEY(isrc),
+	FOREIGN KEY(artistname) REFERENCES Artist(artistname) ON DELETE NO ACTION ON UPDATE CASCADE
+	UNIQUE (title,artistname)
+)
+
+USE [junchenl354]
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TRIGGER check_sum_one
+	ON Plays
+	AFTER INSERT,DELETE,UPDATE
+AS 
+IF EXISTS(SELECT P.msin, SUM(P.share)
+			FROM Plays P GROUP BY P.msin HAVING SUM(P.share) != 1.0)
+BEGIN
+	RAISERROR('The total share is incorrect',16,1)
+END
+
+
+
+
+USE [junchenl354]
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TRIGGER check_musician
+	ON Plays
+	AFTER INSERT,DELETE,UPDATE
+AS 
+BEGIN
+UPDATE Artist SET members = m.num
+	FROM
+		(SELECT a.artistname As art, COUNT(p.msin) AS num
+		FROM Artist a LEFT JOIN Plays p ON a.artistname = p.artistname
+		GROUP by a.artistname) m
+	WHERE artistname = m.art
+END
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
